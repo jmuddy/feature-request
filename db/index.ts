@@ -1,14 +1,10 @@
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
-import * as schema from './schema'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
 
-const connectionString = process.env.DATABASE_URL!
-
-// Explicitly setting the client options fixes the ENOENT search
-const client = postgres(connectionString, {
-  // This is the key: it forces the driver to use the host/port
-  // from the URL rather than looking for a local system file.
-  prepare: false,
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
 })
 
-export const db = drizzle(client, { schema })
+// For Drizzle with the Supabase Pooler
+export const db = drizzle(pool)
