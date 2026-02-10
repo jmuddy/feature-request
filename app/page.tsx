@@ -1,4 +1,4 @@
-import FeedbackPage from './FeedbackPage/page'
+import FeedbackPage from '@/components/Feedback'
 
 export default function Home() {
   return (
