@@ -1,22 +1,38 @@
 import { db } from '@/db'
 import { suggestions } from '@/db/schema'
+import { useAuth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
+import { desc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { DeleteButton } from './DeleteButton'
+import { UpVoteAction } from './UpVoteButton'
 
 export default async function FeedbackPage() {
+  const { userId } = await auth()
+
   // Get all suggestions from Supabase
-  const allSuggestions = await db.select().from(suggestions)
+  const allSuggestions = await db
+    .select()
+    .from(suggestions)
+    .orderBy(desc(suggestions.id))
 
   // The Server Action: Runs on the server when form is submitted
   async function submitSuggestion(formData: FormData) {
     'use server'
 
     const content = formData.get('content') as string
+    console.log('hit')
 
     if (!content) return
+
+    if (!userId) {
+      throw new Error('You must be logged in to make a suggestion!')
+    }
 
     // Insert into the database
     await db.insert(suggestions).values({
       content,
+      userid: userId,
     })
 
     // Tell Next.js to refresh the data on the page
@@ -74,9 +90,9 @@ export default async function FeedbackPage() {
                 <td className='px-6 py-4 text-center'>{item.upvotes}</td>
                 <td className='px-6 py-4 text-center'>
                   {/* We will put the Upvote Button here next */}
-                  <button className='text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md transition-all'>
-                    Vote 👍
-                  </button>
+                  <UpVoteAction id={item.id} initialVotes={item.upvotes || 0} />
+
+                  {item.userid === userId && <DeleteButton id={item.id} />}
                 </td>
               </tr>
             ))}
